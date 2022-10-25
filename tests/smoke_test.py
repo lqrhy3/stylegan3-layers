@@ -1,10 +1,16 @@
-import torch
-from torch_utils.ops.filtered_lrelu import filtered_lrelu
+from torch_utils.ops import filtered_lrelu
+from torch_utils.ops import upfirdn2d
+from torch_utils.ops import bias_act
 
-if __name__ == '__main__':
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    x = torch.rand((2, 3, 48, 48), dtype=torch.float32)
-    x = x.to(device)
-    
-    y = filtered_lrelu(x)
+
+def test_filtered_lrelu_compilability():
+    assert filtered_lrelu._init()
+
+
+def test_upfirdn2d_compilability():
+    assert upfirdn2d._init()
+
+
+def test_bias_act_compilability():
+    assert bias_act._init()
 
