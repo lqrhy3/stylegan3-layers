@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import numpy as np
 import torch
@@ -170,9 +171,10 @@ def run_training_and_validation(batch_size: int, num_epochs: int, device: str, s
 
     val_accuracy = 0.
     for epoch in range(1, num_epochs + 1):
+        start = time.time()
         train_epoch_loop(model, device, train_loader, optimizer, scheduler)
         val_accuracy = validation_loop(model, device, test_loader)
-        print(f'Epoch: {epoch} | validation accuracy: {val_accuracy:.5f} |')
+        print(f'Epoch: {epoch} | validation accuracy: {val_accuracy:.5f} | time: {time.time() - start}')
         scheduler.step()
 
     return val_accuracy
