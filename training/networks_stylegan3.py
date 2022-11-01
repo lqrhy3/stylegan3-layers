@@ -513,3 +513,9 @@ class Generator(torch.nn.Module):
         return img
 
 #----------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    synthesis = SynthesisNetwork(w_dim=128, img_resolution=1024, img_channels=3)
+    # synthesis = SynthesisNetwork(w_dim=32, img_resolution=28, img_channels=3)
+    # ws = torch.rand((1, 16, 128))
+    # synthesis(ws)
