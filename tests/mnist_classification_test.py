@@ -20,63 +20,6 @@ NUM_EPOCHS = 10
 BATCH_SIZE = 64 if DEVICE == 'cuda' else 32
 
 
-# class ConvNet(nn.Module):
-#     def __init__(self):
-#         super(ConvNet, self).__init__()
-#         self.conv1 = nn.Sequential(
-#             nn.Conv2d(
-#                 in_channels=1,
-#                 out_channels=16,
-#                 kernel_size=5,
-#                 stride=1,
-#                 padding=2,
-#             ),
-#             # nn.LeakyReLU(negative_slope=1e-2),
-#             FilteredLeakyReLU(
-#                 in_size=28,
-#                 out_size=14,
-#                 in_sampling_rate=28,
-#                 out_sampling_rate=14,
-#                 in_cutoff=10,
-#                 out_cutoff=5,
-#                 in_half_width=4,
-#                 out_half_width=2,
-#                 conv_kernel=1,
-#             ),
-#             # nn.MaxPool2d(kernel_size=2),
-#         )
-#         self.conv2 = nn.Sequential(
-#             nn.Conv2d(
-#                 in_channels=16,
-#                 out_channels=32,
-#                 kernel_size=5,
-#                 stride=1,
-#                 padding=2
-#             ),
-#             # nn.LeakyReLU(negative_slope=1e-2),
-#             FilteredLeakyReLU(
-#                 in_size=14,
-#                 out_size=7,
-#                 in_sampling_rate=14,
-#                 out_sampling_rate=7,
-#                 in_cutoff=5,
-#                 out_cutoff=3,
-#                 in_half_width=2,
-#                 out_half_width=1,
-#                 conv_kernel=1,
-#             ),
-#             # nn.MaxPool2d(2),
-#         )
-#         self.out = nn.Linear(32 * 7 * 7, 10)
-#
-#     def forward(self, x):
-#         x = self.conv1(x)
-#         x = self.conv2(x)
-#         x = torch.flatten(x, start_dim=1)
-#         output = self.out(x)
-#         return output
-
-
 class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
@@ -88,19 +31,19 @@ class ConvNet(nn.Module):
                 stride=1,
                 padding=2,
             ),
-            nn.LeakyReLU(negative_slope=1e-2),
-            # FilteredLeakyReLU(
-            #     in_size=28,
-            #     out_size=28,
-            #     in_sampling_rate=28,
-            #     out_sampling_rate=28,
-            #     in_cutoff=10,
-            #     out_cutoff=10,
-            #     in_half_width=4,
-            #     out_half_width=4,
-            #     conv_kernel=1,
-            # ),
-            nn.MaxPool2d(kernel_size=2),
+            # nn.LeakyReLU(negative_slope=1e-2),
+            FilteredLeakyReLU(
+                in_size=28,
+                out_size=14,
+                in_sampling_rate=28,
+                out_sampling_rate=14,
+                in_cutoff=10,
+                out_cutoff=5,
+                in_half_width=4,
+                out_half_width=2,
+                conv_kernel=1,
+            ),
+            # nn.MaxPool2d(kernel_size=2),
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(
@@ -110,28 +53,85 @@ class ConvNet(nn.Module):
                 stride=1,
                 padding=2
             ),
-            nn.LeakyReLU(negative_slope=1e-2),
-            # FilteredLeakyReLU(
-            #     in_size=28,
-            #     out_size=28,
-            #     in_sampling_rate=28,
-            #     out_sampling_rate=28,
-            #     in_cutoff=10,
-            #     out_cutoff=10,
-            #     in_half_width=4,
-            #     out_half_width=4,
-            #     conv_kernel=1,
-            # ),
-            nn.MaxPool2d(2),
+            # nn.LeakyReLU(negative_slope=1e-2),
+            FilteredLeakyReLU(
+                in_size=14,
+                out_size=7,
+                in_sampling_rate=14,
+                out_sampling_rate=7,
+                in_cutoff=5,
+                out_cutoff=3,
+                in_half_width=2,
+                out_half_width=1,
+                conv_kernel=1,
+            ),
+            # nn.MaxPool2d(2),
         )
         self.out = nn.Linear(32 * 7 * 7, 10)
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
-        x = x.view(x.size(0), -1)
+        x = torch.flatten(x, start_dim=1)
         output = self.out(x)
         return output
+
+
+# class ConvNet(nn.Module):
+#     def __init__(self):
+#         super(ConvNet, self).__init__()
+#         self.conv1 = nn.Sequential(
+#             nn.Conv2d(
+#                 in_channels=1,
+#                 out_channels=16,
+#                 kernel_size=5,
+#                 stride=1,
+#                 padding=2,
+#             ),
+#             nn.LeakyReLU(negative_slope=1e-2),
+#             # FilteredLeakyReLU(
+#             #     in_size=28,
+#             #     out_size=28,
+#             #     in_sampling_rate=28,
+#             #     out_sampling_rate=28,
+#             #     in_cutoff=10,
+#             #     out_cutoff=10,
+#             #     in_half_width=4,
+#             #     out_half_width=4,
+#             #     conv_kernel=1,
+#             # ),
+#             nn.MaxPool2d(kernel_size=2),
+#         )
+#         self.conv2 = nn.Sequential(
+#             nn.Conv2d(
+#                 in_channels=16,
+#                 out_channels=32,
+#                 kernel_size=5,
+#                 stride=1,
+#                 padding=2
+#             ),
+#             nn.LeakyReLU(negative_slope=1e-2),
+#             # FilteredLeakyReLU(
+#             #     in_size=28,
+#             #     out_size=28,
+#             #     in_sampling_rate=28,
+#             #     out_sampling_rate=28,
+#             #     in_cutoff=10,
+#             #     out_cutoff=10,
+#             #     in_half_width=4,
+#             #     out_half_width=4,
+#             #     conv_kernel=1,
+#             # ),
+#             nn.MaxPool2d(2),
+#         )
+#         self.out = nn.Linear(32 * 7 * 7, 10)
+#
+#     def forward(self, x):
+#         x = self.conv1(x)
+#         x = self.conv2(x)
+#         x = x.view(x.size(0), -1)
+#         output = self.out(x)
+#         return output
 
 
 # def test_mnist_classification():
