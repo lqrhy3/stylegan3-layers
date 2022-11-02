@@ -24,6 +24,7 @@ def test_shapes():
         half_width=HALF_WIDTH,
         negative_slope=1e-2
     )
+    filtered_leaky_relu.to(DEVICE)
 
     received_shape = filtered_leaky_relu(x).shape
 

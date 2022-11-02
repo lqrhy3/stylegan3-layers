@@ -23,6 +23,7 @@ def test_shapes():
         half_width=HALF_WIDTH,
         down_factor=DOWN_FACTOR
     )
+    filtered_downsampler.to(DEVICE)
 
     received_shape = filtered_downsampler(x).shape
 

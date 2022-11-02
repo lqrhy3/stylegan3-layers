@@ -23,6 +23,7 @@ def test_shapes():
         half_width=HALF_WIDTH,
         up_factor=UP_FACTOR
     )
+    filtered_upsampler.to(DEVICE)
 
     received_shape = filtered_upsampler(x).shape
 
