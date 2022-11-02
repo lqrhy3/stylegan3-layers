@@ -1,18 +1,18 @@
 import os
 import sys
 import time
+import pytest
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import tqdm
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 
 from custom.filtered_leaky_relu import FilteredLeakyReLU
+from custom.filtered_downsampler import FilteredDownsampler
 
 SEED = 420
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -23,7 +23,7 @@ BATCH_SIZE = 64 if DEVICE == 'cuda' else 32
 class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
-        self.conv1 = nn.Sequential(
+        self.conv_layer1 = nn.Sequential(
             nn.Conv2d(
                 in_channels=1,
                 out_channels=16,
@@ -31,21 +31,19 @@ class ConvNet(nn.Module):
                 stride=1,
                 padding=2,
             ),
-            # nn.LeakyReLU(negative_slope=1e-2),
             FilteredLeakyReLU(
-                in_size=28,
-                out_size=14,
-                in_sampling_rate=28,
-                out_sampling_rate=14,
-                in_cutoff=10,
-                out_cutoff=5,
-                in_half_width=4,
-                out_half_width=2,
-                conv_kernel=1,
+                sampling_rate=28,
+                cutoff=10,
+                half_width=4,
             ),
-            # nn.MaxPool2d(kernel_size=2),
+            FilteredDownsampler(
+                sampling_rate=28,
+                cutoff=7,
+                half_width=2,
+                down_factor=2
+            )
         )
-        self.conv2 = nn.Sequential(
+        self.conv_layer2 = nn.Sequential(
             nn.Conv2d(
                 in_channels=16,
                 out_channels=32,
@@ -53,90 +51,45 @@ class ConvNet(nn.Module):
                 stride=1,
                 padding=2
             ),
-            # nn.LeakyReLU(negative_slope=1e-2),
             FilteredLeakyReLU(
-                in_size=14,
-                out_size=7,
-                in_sampling_rate=14,
-                out_sampling_rate=7,
-                in_cutoff=5,
-                out_cutoff=3,
-                in_half_width=2,
-                out_half_width=1,
-                conv_kernel=1,
+                sampling_rate=14,
+                cutoff=7,
+                half_width=2,
             ),
-            # nn.MaxPool2d(2),
+            FilteredDownsampler(
+                sampling_rate=14,
+                cutoff=4,
+                half_width=1,
+                down_factor=2
+            )
         )
-        self.out = nn.Linear(32 * 7 * 7, 10)
+        self.head = nn.Linear(32 * 7 * 7, 10)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = torch.flatten(x, start_dim=1)
-        output = self.out(x)
+        x = self.conv_layer1(x)
+        x = self.conv_layer2(x)
+        x = x.reshape(x.size(0), -1)
+        output = self.head(x)
         return output
 
 
-# class ConvNet(nn.Module):
-#     def __init__(self):
-#         super(ConvNet, self).__init__()
-#         self.conv1 = nn.Sequential(
-#             nn.Conv2d(
-#                 in_channels=1,
-#                 out_channels=16,
-#                 kernel_size=5,
-#                 stride=1,
-#                 padding=2,
-#             ),
-#             nn.LeakyReLU(negative_slope=1e-2),
-#             # FilteredLeakyReLU(
-#             #     in_size=28,
-#             #     out_size=28,
-#             #     in_sampling_rate=28,
-#             #     out_sampling_rate=28,
-#             #     in_cutoff=10,
-#             #     out_cutoff=10,
-#             #     in_half_width=4,
-#             #     out_half_width=4,
-#             #     conv_kernel=1,
-#             # ),
-#             nn.MaxPool2d(kernel_size=2),
-#         )
-#         self.conv2 = nn.Sequential(
-#             nn.Conv2d(
-#                 in_channels=16,
-#                 out_channels=32,
-#                 kernel_size=5,
-#                 stride=1,
-#                 padding=2
-#             ),
-#             nn.LeakyReLU(negative_slope=1e-2),
-#             # FilteredLeakyReLU(
-#             #     in_size=28,
-#             #     out_size=28,
-#             #     in_sampling_rate=28,
-#             #     out_sampling_rate=28,
-#             #     in_cutoff=10,
-#             #     out_cutoff=10,
-#             #     in_half_width=4,
-#             #     out_half_width=4,
-#             #     conv_kernel=1,
-#             # ),
-#             nn.MaxPool2d(2),
-#         )
-#         self.out = nn.Linear(32 * 7 * 7, 10)
-#
-#     def forward(self, x):
-#         x = self.conv1(x)
-#         x = self.conv2(x)
-#         x = x.view(x.size(0), -1)
-#         output = self.out(x)
-#         return output
+def test_forward_backward():
+    model = ConvNet()
+    model.to(DEVICE)
+
+    x = torch.zeros((32, 1, 28, 28), dtype=torch.float32)
+    x = x.to(DEVICE)
+
+    out = model(x)
+    out.mean().backward()
+
+    assert True
 
 
-# def test_mnist_classification():
-#     val_accuracy = run_training_and_validation(BATCH_SIZE, NUM_EPOCHS, DEVICE, SEED)
-#     assert val_accuracy >= 0.985
+@pytest.mark.training_test
+def test_validation_accuracy():
+    val_accuracy = run_training_and_validation(BATCH_SIZE, NUM_EPOCHS, DEVICE, SEED)
+    assert val_accuracy >= 0.985
 
 
 def run_training_and_validation(batch_size: int, num_epochs: int, device: str, seed: int):
@@ -174,7 +127,6 @@ def run_training_and_validation(batch_size: int, num_epochs: int, device: str, s
         start = time.time()
         train_epoch_loop(model, device, train_loader, optimizer, scheduler)
         val_accuracy = validation_loop(model, device, test_loader)
-        print(f'Epoch: {epoch} | validation accuracy: {val_accuracy:.5f} | time: {time.time() - start}')
         scheduler.step()
 
     return val_accuracy
@@ -183,7 +135,7 @@ def run_training_and_validation(batch_size: int, num_epochs: int, device: str, s
 def train_epoch_loop(model: nn.Module, device: str, train_loader, optimizer, scheduler):
     model.train()
     sys.stdout.flush()
-    for batch_idx, (data, target) in enumerate(tqdm.tqdm(train_loader)):
+    for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
@@ -206,7 +158,3 @@ def validation_loop(model: nn.Module, device: str, test_loader):
 
     accuracy = correct / len(test_loader.dataset)
     return accuracy
-
-
-if __name__ == '__main__':
-    run_training_and_validation(BATCH_SIZE, NUM_EPOCHS, DEVICE, SEED)

@@ -10,7 +10,7 @@ DTYPE = torch.float32
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def test_lrelu():
+def test_non_filtered_lrelu():
     x = torch.rand((BATCH_SIZE, NUM_CHANNELS, HEIGHT, WIDTH), dtype=torch.float32)
     x = x.to(DEVICE)
 
