@@ -86,7 +86,7 @@ def test_forward_backward():
     assert True
 
 
-@pytest.mark.training_test
+@pytest.mark.slow
 def test_validation_accuracy():
     val_accuracy = run_training_and_validation(BATCH_SIZE, NUM_EPOCHS, DEVICE, SEED)
     assert val_accuracy >= 0.985
@@ -124,7 +124,6 @@ def run_training_and_validation(batch_size: int, num_epochs: int, device: str, s
 
     val_accuracy = 0.
     for epoch in range(1, num_epochs + 1):
-        start = time.time()
         train_epoch_loop(model, device, train_loader, optimizer, scheduler)
         val_accuracy = validation_loop(model, device, test_loader)
         scheduler.step()
